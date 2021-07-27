@@ -1,23 +1,21 @@
 <launch>
   <node name="SLAM" type="ndt_mapping" pkg="ndt_mapping" output="log" />
 
-  <param name="/main_rate" type="int" value="1" />            <!-- メインループのレート -->
-  <param name="/scan_or_map" type="bool" value="true" />      <!-- 地図を描画orスキャンデータを描画 -->
-  <param name="/pc_or_ocg" type="bool" value="true" />        <!-- 点群地図or占有格子地図 -->
+  <param name="/filename_in" type="str" value="/home/takahashi/catkin_ws/scan_odom1.txt" />
+ 
   <param name="/draw_skip" type="int" value="5" />            <!-- 地図描画の周期 -->
   <param name="/start_frame" type="int" value="190" />        <!-- スタートするフレーム番号 -->
-  <param name="/keyframe_skip" type="int" value="5" />        <!-- 広域地図を作る周期 占有格子地図の場合は1 -->
-  <param name="/degCheck" type="bool" value="true" />         <!-- 退化処理するか -->
-  <param name="/cell_size" type="double" value="0.1" />      <!-- 10cm セルサイズ -->
-  <param name="/radius_size" type="double" value="625.0" />     <!--10m マップの半径(1辺の半分) -->
+  <param name="/end_frame" type="int" value="100000" />        <!-- 終了するフレーム番号 -->
+  <param name="/keyframe_skip" type="int" value="5" />        <!-- 全体地図を作る周期 -->
   <param name="/score_thre" type="double" value="1.0" />      <!-- スコアの閾値 -->
   <param name="/num_thre" type="int" value="150" />            <!-- 使用スキャン点数の閾値 -->
-  <param name="/delta_thre" type="double" value="0.000001" /> <!-- スコア変化の閾値 -->
-  <param name="/dd" type="double" value="0.0001" />          <!-- 微小変化(並進) -->
-  <param name="/da" type="double" value="0.0001" />          <!-- 微小変化(回転) -->
   <param name="/space" type="double" value="0.05" />          <!-- 5cm スキャン点間隔 -->
   <param name="/space_thre" type="double" value="0.25" />     <!-- 25cm スキャン点間隔の閾値 -->
-  <param name="/cov_a1" type="double" value="0.001" />     <!-- オドメトリ共分散の係数 x成分 -->
-  <param name="/cov_a2" type="double" value="0.005" />     <!-- オドメトリ共分散の係数 y成分 -->
-  <param name="/cov_a3" type="double" value="0.05" />     <!-- オドメトリ共分散の係数 回転成分 -->
+  <param name="/sepThre" type="double" value="10.0" />     <!-- 10mごとにサブマップを作る -->
+
+  <param name="/TransformationEpsilon" type="double" value="0.01" />
+  <param name="/StepSize" type="double" value="0.1" />
+  <param name="/Resolution" type="double" value="0.8" />
+  <param name="/MaximumIterations" type="int" value="35" />
+  <param name="/LeafSize" type="double" value="0.2" />
 </launch>

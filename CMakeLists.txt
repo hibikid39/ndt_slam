@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
+find_package(PCL 1.2 REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -43,6 +44,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -66,22 +68,22 @@ src/FrontEnd.cpp
 src/Scan2D.cpp
 src/Pose2D.cpp
 src/PointCloudMap.cpp
-src/PoseEstimatorICP.cpp
-src/ScanMatcher2D.cpp
+src/PoseEstimator.cpp
+src/ScanMatcher.cpp
 src/RefScanMaker.cpp
-src/DataAssociator.cpp
-src/CostFunction.cpp
-src/PoseOptimizer.cpp
+#src/DataAssociator.cpp
+#src/CostFunction.cpp
+#src/PoseOptimizer.cpp
 src/ScanPointResampler.cpp
-src/NNGridTable.cpp
-src/ScanPointAnalyser.cpp
-src/PoseFuser.cpp
-src/CovarianceCalculator.cpp
+#src/NNGridTable.cpp
+#src/ScanPointAnalyser.cpp
+#src/PoseFuser.cpp
+#src/CovarianceCalculator.cpp
 src/TFBroadcaster.cpp
-src/LoopDetector.cpp
-src/BackEnd.cpp
-src/PoseGraph.cpp
-src/P2oDriver2D.cpp
+#src/LoopDetector.cpp
+#src/BackEnd.cpp
+#src/PoseGraph.cpp
+#src/P2oDriver2D.cpp
 )
 
 ## Rename C++ executable without prefix
@@ -98,3 +100,8 @@ src/P2oDriver2D.cpp
 target_link_libraries(ndt_mapping
   ${catkin_LIBRARIES}
 )
+target_link_libraries(ndt_mapping
+  ${PCL_LIBRARIES}
+)
+
+add_definitions(${PCL_DEFINITIONS})

@@ -7,12 +7,12 @@
 
 #include "MyUtil.h"
 #include "Scan2D.h"
-#include "ScanMatcher2D.h"
+#include "ScanMatcher.h"
 #include "PointCloudMap.h"
 #include "Timer.h"
-#include "BackEnd.h"
-#include "LoopDetector.h"
-#include "PoseGraph.h"
+//#include "BackEnd.h"
+//#include "LoopDetector.h"
+//#include "PoseGraph.h"
 
 // SLAMフロントエンド。ロボット位置推定、地図生成、ループ閉じ込みを取り仕切る。
 class FrontEnd {
@@ -21,11 +21,12 @@ private:
   int keyframeSkip;                  // キーフレーム間隔
   int startFrame;                    // 開始するフレーム番号
 
-  ScanMatcher2D smat;                // スキャンマッチング
+//  ScanMatcher2D smat;                // スキャンマッチング
+  ScanMatcher smat;                // スキャンマッチング
   PointCloudMap *pcmap;              // 点群地図
-  PoseGraph *pg;                     // ポーズグラフ
-  LoopDetector lpd;                  // ループ検出器
-  BackEnd *backEnd;
+//  PoseGraph *pg;                     // ポーズグラフ
+//  LoopDetector lpd;                  // ループ検出器
+//  BackEnd *backEnd;
 
   Timer timer;
 
@@ -47,7 +48,7 @@ public:
   }
 
 ///////////////////////////////////////////////////////////////////////////////
-
+/*
   void setCostFunction(CostFunction *cfunc_) {
     lpd.setCostFunction(cfunc_);
   }
@@ -60,13 +61,16 @@ public:
     smat.setPoseEstimatorICP(estim_);
     lpd.setPoseEstimatorICP(estim_);
   }
-
+*/
+  void setPoseEstimator(PoseEstimator *estim_) {
+    smat.setPoseEstimator(estim_);
+  }
   void setPointCloudMap(PointCloudMap *pcmap_) {
     pcmap = pcmap_;
     smat.setPointCloudMap(pcmap_);
-    lpd.setPointCloudMap(pcmap_);
+//    lpd.setPointCloudMap(pcmap_);
   }
-
+/*
   void setPoseFuser(PoseFuser *pfu_) {
     smat.setPoseFuser(pfu_);
     lpd.setPoseFuser(pfu_);
@@ -80,11 +84,12 @@ public:
   void setBackEnd(BackEnd *backEnd_){
     backEnd = backEnd_;
   }
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 
   void process(Scan2D &scan);
-  bool makeOdometryArc(Pose2D &curPose, const Eigen::Matrix3d &fusedCov);
+//  bool makeOdometryArc(Pose2D &curPose, const Eigen::Matrix3d &fusedCov);
 
 };
 

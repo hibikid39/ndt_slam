@@ -2,8 +2,6 @@
 
 // 現在スキャンscanを処理する。
 void FrontEnd::process(Scan2D &scan) {
-  ROS_INFO("--- [FrontEnd::process] cnt=%d ---",cnt);
-
   if (scan.sid < startFrame) {
     return;
   } else {
@@ -12,13 +10,15 @@ void FrontEnd::process(Scan2D &scan) {
 
     // 全体地図を生成
     if (cnt%keyframeSkip == 0){               // キーフレームのときだけ
+/*
       if(cnt == 0) pcmap->setNthre(1);        // 1回目は点数が少ないため
       else pcmap->setNthre(5);
-
+*/
       pcmap->makeGlobalMap();                 // 点群地図の全体地図を生成
     }
 
     // ポーズグラフにオドメトリアークを追加
+/*
     Pose2D curPose = pcmap->getLastPose();  // スキャンマッチングで推定した現在のロボット位置
     if (cnt == 0) {                 // 最初はノードを置くだけ
       pg->addNode(curPose);
@@ -26,7 +26,9 @@ void FrontEnd::process(Scan2D &scan) {
       Eigen::Matrix3d &cov = smat.getCov();
       makeOdometryArc(curPose, cov);
     }
+*/
 
+/*
     // ループ閉じ込み
     if ((cnt > keyframeSkip) && (cnt % keyframeSkip == 0)) {      // キーフレームのときだけ行う
       if (lpd.detectLoop(&scan, curPose, cnt)) {  // ループ検出を起動
@@ -38,6 +40,7 @@ void FrontEnd::process(Scan2D &scan) {
         smat.remakePoseArray(backEnd->newPoses);
       }
     }
+*/
 
     cnt++;
   }
@@ -45,6 +48,7 @@ void FrontEnd::process(Scan2D &scan) {
 
 ////////////
 
+/*
 // アークとノードの生成
 bool FrontEnd::makeOdometryArc(Pose2D &curPose, const Eigen::Matrix3d &fusedCov) {
   if (pg->nodes.size() == 0)                             // 念のためのチェック
@@ -69,3 +73,4 @@ bool FrontEnd::makeOdometryArc(Pose2D &curPose, const Eigen::Matrix3d &fusedCov)
 
   return(true);
 }
+*/

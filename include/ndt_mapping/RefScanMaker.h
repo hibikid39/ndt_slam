@@ -15,7 +15,7 @@ private:
   Scan2D refScan;                       // 参照スキャン本体。これを外に提供
 
 public:
-  RefScanMaker() : pcmap(NULL) {
+  RefScanMaker() {
   }
 
   ~RefScanMaker() {

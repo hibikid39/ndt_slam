@@ -6,11 +6,14 @@
 #include <sensor_msgs/ChannelFloat32.h>
 #include <vector>
 
+#include <pcl/point_types.h>
+#include <pcl/filters/approximate_voxel_grid.h>
+
 #include "MyUtil.h"
 #include "LPoint2D.h"
 #include "Pose2D.h"
 #include "Scan2D.h"
-#include "NNGridTable.h"
+//#include "NNGridTable.h"
 #include "Timer.h"
 
 // 部分地図
@@ -22,15 +25,19 @@ struct Submap {
   std::vector<LPoint2D> lps; // 部分地図内のスキャン点群
   Pose2D repPose; // 自己位置の代表点
 
+  double LeafSize; // フィルタサイズ
+
   // デバッグ用
   Timer timer;
 
-  Submap() : atdS(0), cntS(0), cntE(-1) {
+  Submap() : atdS(0), cntS(0), cntE(-1), LeafSize(0.2) {
+    ros::param::get("LeafSize", LeafSize);
   }
 
-  Submap(double a, size_t s) : cntE(-1) {
+  Submap(double a, size_t s) : cntE(-1), LeafSize(0.2) {
     atdS = a;
     cntS = s;
+    ros::param::get("LeafSize", LeafSize);
   }
 
   void addPoints(const std::vector<LPoint2D> &lps_) {
@@ -38,7 +45,8 @@ struct Submap {
       lps.emplace_back(lps_[i]);
   }
 
-  std::vector<LPoint2D> subsamplePoints(int nthre, NNGridTable *nntab);
+//  std::vector<LPoint2D> subsamplePoints(int nthre, NNGridTable *nntab);
+  std::vector<LPoint2D> filterPoints();
 };
 
 // 点群地図クラス
@@ -55,8 +63,7 @@ public:
   std::vector<LPoint2D> globalMap;      // 全体地図 間引き後の点
   std::vector<LPoint2D> localMap;       // 現在位置近傍の局所地図 スキャンマッチングに使う
 
-  std::vector<LPoint2D> allLps;         // 全スキャン点群 作業用
-  NNGridTable *nntab;                    // 格子テーブル
+//  NNGridTable *nntab;                    // 格子テーブル
 
   // 部分地図
   double sepThre;                // 部分地図の区切りとなる累積走行距離(atd)[m]
@@ -72,9 +79,9 @@ public:
 
   PointCloudMap() : nthre(1), sepThre(30), startFrame(0) {
     ros::param::get("start_frame", startFrame);
+    ros::param::get("sepThre", sepThre);
 
     globalMap.reserve(MAX_POINT_NUM);       // 最初に確保
-    allLps.reserve(MAX_POINT_NUM);          // 最初に確保
 
     // 最初の部分地図を作っておく
     Submap submap;
@@ -104,11 +111,11 @@ public:
   }
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
   void setNNGridTable(NNGridTable *nntab_) {
     nntab = nntab_;
   }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
   void setNthre(int _nthre){

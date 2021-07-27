@@ -30,6 +30,10 @@ struct LPoint2D {
     sid = id;
   }
 
+  LPoint2D(double _x, double _y): x(_x), y(_y) {
+    init();
+  }
+
 //////////
 
   void init() {

@@ -4,6 +4,7 @@ using namespace std;
 ////// 部分地図 ///////
 
 // 格子テーブルを用いて、部分地図の代表点を得る
+/*
 vector<LPoint2D> Submap::subsamplePoints(int nthre, NNGridTable *nntab) {
   double x_bottom = 10000000000;
   double x_top = -10000000000;
@@ -31,7 +32,34 @@ vector<LPoint2D> Submap::subsamplePoints(int nthre, NNGridTable *nntab) {
 
   return(sps);
 }
+*/
+vector<LPoint2D> Submap::filterPoints() {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
+  // input_cloud data
+  input_cloud->width = lps.size();
+  input_cloud->height = 1;
+  input_cloud->is_dense = false;
+  input_cloud->points.resize(input_cloud->width * input_cloud->height);
+  for (size_t i=0; i<lps.size(); i++) {
+    input_cloud->points[i].x = lps[i].x;
+    input_cloud->points[i].y = lps[i].y;
+    input_cloud->points[i].z = 0;
+  }
+
+  pcl::ApproximateVoxelGrid<pcl::PointXYZ> approximate_voxel_filter;
+  approximate_voxel_filter.setLeafSize(LeafSize, LeafSize, LeafSize);
+  approximate_voxel_filter.setInputCloud(input_cloud);
+  approximate_voxel_filter.filter(*filtered_cloud);
+
+  vector<LPoint2D> lps_filterd;
+  for (auto itr = filtered_cloud->points.begin(); itr != filtered_cloud->points.end(); itr++) {
+    LPoint2D lp(itr->x, itr->y);
+    lps_filterd.emplace_back(lp);
+  }
+  return lps_filterd;
+}
 ///////////////////////
 
 // ロボット位置の追加
@@ -45,7 +73,7 @@ void PointCloudMap::addPose(const Pose2D &p) {
     atd += sqrt(p.tx*p.tx + p.ty*p.ty);
   }
 
-  poses.push_back(p);
+  poses.emplace_back(p);
 }
 
 // スキャン点群の追加
@@ -54,22 +82,8 @@ void PointCloudMap::addPoints(const std::vector<LPoint2D> &lps) {
   if (atd - curSubmap.atdS >= sepThre ) {          // 累積走行距離が閾値を超えたら新しい部分地図に変える
     size_t size = poses.size();                    // posesにはすでに最新値を追加済みなので-1
     curSubmap.cntE = size-1;                       // 部分地図の最後のスキャン番号
-    curSubmap.lps = curSubmap.subsamplePoints(nthre, nntab); // 終了した部分地図は代表点のみにする（軽量化）
-
-/*
-    // 終了したサブマップの代表自己位置を保存
-    double x = 0;
-    double y = 0;
-    double th = 0;
-    for(int i=curSubmap.cntS; i<curSubmap.cntE; i++) {
-      x += poses[i].tx;
-      y += poses[i].ty;
-      th += poses[i].th; // 正規化しない
-    }
-    curSubmap.repPose.tx = x/(curSubmap.cntE - curSubmap.cntS);
-    curSubmap.repPose.ty = y/(curSubmap.cntE - curSubmap.cntS);
-    curSubmap.repPose.th = MyUtil::add_angle(th/(curSubmap.cntE - curSubmap.cntS), 0); // 0足して正規化
-*/
+//    curSubmap.lps = curSubmap.subsamplePoints(nthre, nntab); // 終了した部分地図は代表点のみにする（軽量化）
+    curSubmap.lps = curSubmap.filterPoints(); // フィルター
 
     Submap submap(atd, size);                      // 新しい部分地図
     submap.addPoints(lps);                         // スキャン点群の登録
@@ -111,19 +125,12 @@ void PointCloudMap::makeGlobalMap(){
       uint32_t rgb = (r << 16 | g << 8 | b);
       pcmap_ros.channels[0].values.emplace_back(*reinterpret_cast<float*>(&rgb));   // (R,G,B) = (255, 255, 255)
     }
-/*
-    if (i == submaps.size()-2) {                   // 局所地図には最後の部分地図だけ入れる
-      for (size_t j=0; j<lps.size(); j++) {
-        localMap.emplace_back(lps[j]);
-      }
-    }
-*/
   }
 
-  // 現在の部分地図の代表点を全体地図と局所地図に入れる
+  // 現在の部分地図の代表点を全体地図に入れる
   Submap &curSubmap = submaps.back();              // 現在の部分地図
-  vector<LPoint2D> sps = curSubmap.subsamplePoints(nthre, nntab);  // 代表点を得る
-//  vector<LPoint2D> sps = curSubmap.lps;
+//  vector<LPoint2D> sps = curSubmap.subsamplePoints(nthre, nntab);  // 代表点を得る
+  vector<LPoint2D> sps = curSubmap.filterPoints(); // フィルター
   for (size_t i=0; i<sps.size(); i++) {
     globalMap.emplace_back(sps[i]);
 //    localMap.emplace_back(sps[i]);
@@ -140,7 +147,7 @@ void PointCloudMap::makeGlobalMap(){
   }
 
   // 以下は確認用
-  ROS_INFO("[PointCloudMap::makeGlobalMap] curSubmap.atd=%g, atd=%g, sps.size=%lu", curSubmap.atdS, atd, sps.size());
+  ROS_INFO("[PointCloudMap::makeGlobalMap] curSubmap.atdS=%g, atd=%g", curSubmap.atdS, atd);
   ROS_INFO("[PointCloudMap::makeGlobalMap] submaps.size=%lu, globalMap.size=%lu", submaps.size(), globalMap.size());
 
 //  timer.end_timer();
@@ -158,31 +165,12 @@ void PointCloudMap::makeLocalMap(){
     for (size_t i=0; i<lps_old.size(); i++) {
       localMap.emplace_back(lps_old[i]);
     }
-
-/*
-    // 以前に訪れたことのある部分地図を探索して局所地図に入れる
-    double dst;
-    double dstMin = 10000000000;
-    size_t min_i = 0;
-    for (size_t i=0; i<submaps.size()-2; i++) {
-      dst = (lastPose.tx - submaps[i].repPose.tx)*(lastPose.tx - submaps[i].repPose.tx) + (lastPose.ty - submaps[i].repPose.ty)*(lastPose.ty - submaps[i].repPose.ty);
-      if (dst < dstMin) {
-        dstMin = dst;
-        min_i = i;
-      }
-    }
-    vector<LPoint2D> &lps_revisit = submaps[min_i].lps;
-    for (size_t i=0; i<lps_revisit.size(); i++) {
-      localMap.emplace_back(lps_revisit[i]);
-    }
-*/
-
   }
 
   // 現在の部分地図の代表点を局所地図に入れる
   Submap &curSubmap = submaps.back();              // 現在の部分地図
-  vector<LPoint2D> lps_cur = curSubmap.subsamplePoints(nthre, nntab);  // 代表点を得る
-//  vector<LPoint2D> lps_cur = curSubmap.lps;
+//  vector<LPoint2D> lps_cur = curSubmap.subsamplePoints(nthre, nntab);  // 代表点を得る
+  vector<LPoint2D> lps_cur = curSubmap.filterPoints(); // フィルター
   for (size_t i=0; i<lps_cur.size(); i++) {
     localMap.emplace_back(lps_cur[i]);
   }
@@ -190,6 +178,7 @@ void PointCloudMap::makeLocalMap(){
   ROS_INFO("[PointCloudMap::makeLocalMap] localMap.size=%lu", localMap.size());   // 確認用
 }
 
+/*
 // ポーズ調整後のロボット軌跡newPoseを用いて、地図を再構築する
 void PointCloudMap::remakeMaps(const std::vector<Pose2D> &newPoses) {
   // 各部分地図内の点の位置を修正する
@@ -224,3 +213,4 @@ void PointCloudMap::remakeMaps(const std::vector<Pose2D> &newPoses) {
   }
   lastPose = newPoses.back();
 }
+*/

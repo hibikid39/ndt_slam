@@ -1,0 +1,12 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	0	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+subsamplePoints	/home/takahashi/catkin_ws/src/ndt_mapping/src/PointCloudMap.cpp	/^vector<LPoint2D> Submap::subsamplePoints(int nthre, NNGridTable *nntab) {$/;"	function	line:7	class:Submap	signature:(int nthre, NNGridTable *nntab)
+addPose	/home/takahashi/catkin_ws/src/ndt_mapping/src/PointCloudMap.cpp	/^void PointCloudMap::addPose(const Pose2D &p) {$/;"	function	line:38	class:PointCloudMap	signature:(const Pose2D &p)
+addPoints	/home/takahashi/catkin_ws/src/ndt_mapping/src/PointCloudMap.cpp	/^void PointCloudMap::addPoints(const std::vector<LPoint2D> &lps) {$/;"	function	line:52	class:PointCloudMap	signature:(const std::vector<LPoint2D> &lps)
+makeGlobalMap	/home/takahashi/catkin_ws/src/ndt_mapping/src/PointCloudMap.cpp	/^void PointCloudMap::makeGlobalMap(){$/;"	function	line:70	class:PointCloudMap	signature:()
+makeLocalMap	/home/takahashi/catkin_ws/src/ndt_mapping/src/PointCloudMap.cpp	/^void PointCloudMap::makeLocalMap(){$/;"	function	line:136	class:PointCloudMap	signature:()
+remakeMaps	/home/takahashi/catkin_ws/src/ndt_mapping/src/PointCloudMap.cpp	/^void PointCloudMap::remakeMaps(const std::vector<Pose2D> &newPoses) {$/;"	function	line:179	class:PointCloudMap	signature:(const std::vector<Pose2D> &newPoses)

@@ -15,14 +15,14 @@
 #include "PointCloudMap.h"
 #include "RefScanMaker.h"
 #include "ScanPointResampler.h"
-#include "ScanPointAnalyser.h"
-#include "PoseEstimatorICP.h"
-#include "PoseFuser.h"
+//#include "ScanPointAnalyser.h"
+#include "PoseEstimator.h"
+//#include "PoseFuser.h"
 #include "TFBroadcaster.h"
 #include "Timer.h"
 
 // ICPを用いてスキャンマッチングを行う
-class ScanMatcher2D {
+class ScanMatcher {
 private:
   int cnt;                                // 論理時刻。スキャン番号に対応
   Scan2D prevScan;                        // 1つ前のスキャン
@@ -34,15 +34,15 @@ private:
   bool degCheck;                           // 退化処理をするか
 
 public:
-  PoseEstimatorICP *estim;                 // ロボット位置推定器
+  PoseEstimator *estim;                 // ロボット位置推定器
   PointCloudMap *pcmap;                   // 点群地図
   ScanPointResampler spres;               // スキャン点間隔均一化
-  ScanPointAnalyser spana;                // スキャン点法線計算
+//  ScanPointAnalyser spana;                // スキャン点法線計算
   RefScanMaker refScanMaker;              // 参照スキャン生成
-  PoseFuser *pfu;                          // センサ融合器
+//  PoseFuser *pfu;                          // センサ融合器
   TFBroadcaster tfb;                      // 座標変換TFのブロードキャスター
-  Eigen::Matrix3d cov;                    // ロボット移動量の共分散行列
-  Eigen::Matrix3d totalCov;               // ロボット位置の共分散行列
+//  Eigen::Matrix3d cov;                    // ロボット移動量の共分散行列
+//  Eigen::Matrix3d totalCov;               // ロボット位置の共分散行列
   std::vector<Pose2D> poses;              // ロボットの軌跡
 
   //std::vector<PoseCov> poseCovs;          // デバッグ用
@@ -52,18 +52,18 @@ public:
   Timer timer;
 
 public:
-  ScanMatcher2D() : cnt(0), scthre(0.0), nthre(0), degCheck(false){
+  ScanMatcher() : cnt(0), scthre(0.0), nthre(0), degCheck(false){
     ros::param::get("score_thre", scthre);
     ros::param::get("num_thre", nthre);
     ros::param::get("degCheck", degCheck);
   }
 
-  ~ScanMatcher2D(){
+  ~ScanMatcher(){
   }
 
 ///////////
 
-  void setPoseEstimatorICP(PoseEstimatorICP *estim_) {
+  void setPoseEstimator(PoseEstimator *estim_) {
     estim = estim_;
   }
 
@@ -71,7 +71,7 @@ public:
     pcmap = pcmap_;
     refScanMaker.setPointCloudMap(pcmap_); // 参照スキャン生成器に地図を渡す
   }
-
+/*
   void setPoseFuser(PoseFuser *pfu_) {
     pfu = pfu_;
   }
@@ -79,7 +79,7 @@ public:
   Eigen::Matrix3d &getCov() {
     return(cov);
   }
-
+*/
   void savePose(const std_msgs::Header &header, const Pose2D &pose) {
     geometry_msgs::Pose po;
 
