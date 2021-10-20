@@ -4,6 +4,7 @@
 #include <cmath>
 #include <Eigen/Core>
 #include <Eigen/Eigen>
+#include <Eigen/LU>
 #include <boost/array.hpp>
 
 #include <geometry_msgs/Pose.h>

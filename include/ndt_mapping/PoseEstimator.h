@@ -1,5 +1,5 @@
-#ifndef POSEESTIMATOR_ICP_H_
-#define POSEESTIMATOR_ICP_H_
+#ifndef POSEESTIMATOR_H_
+#define POSEESTIMATOR_H_
 
 #include <ros/ros.h>
 #include <vector>
@@ -16,15 +16,28 @@
 //#include "DataAssociator.h"
 #include "Timer.h"
 
+namespace pcl{
+  template<typename PointSource, typename PointTarget>
+  class NDT : public NormalDistributionsTransform<PointSource, PointTarget>
+  {
+  public:
+    typedef typename NormalDistributionsTransform<PointSource, PointTarget>::PointCloudSource PointCloudSource;
+    void getHessian (Eigen::Matrix<double, 6, 6> &hessian,
+                      PointCloudSource &trans_cloud,
+                      Eigen::Matrix<double, 6, 1> &p) {
+      NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(hessian, trans_cloud, p);
+    }
+  };
+}
+
+
 //////
 
 class PoseEstimator{
 private:
   const Scan2D *curScan;       // 現在スキャン ポインタ
   const Scan2D *refScan;
-  size_t usedNum;              // ICPに使われた点数。LoopDetectorで信頼性チェックに使う
-  double pnrate;               // 正しく対応づけされた点の比率
-  double thre;                 // スコア変化の閾値
+  double coeNDTCov;
 
   double TransformationEpsilon;
   double StepSize;
@@ -34,7 +47,8 @@ private:
   double LeafSize; // フィルタサイズ
 
 //  PoseOptimizer popt;         // 最適化クラス
-  pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
+//  pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
+  pcl::NDT<pcl::PointXYZ, pcl::PointXYZ> ndt;
 
   Timer timer;
 
@@ -44,9 +58,9 @@ public:
 
 public:
 
-  PoseEstimator() : usedNum(0), pnrate(0.0), thre(0.0), totalError(0.0)
-  ,TransformationEpsilon(0.01), StepSize(0.1), Resolution(1.0), MaximumIterations(35), LeafSize(0.1) {
-    ros::param::get("delta_thre", thre);
+  PoseEstimator() : coeNDTCov(1.0),
+  TransformationEpsilon(0.01), StepSize(0.1), Resolution(1.0), MaximumIterations(35), LeafSize(0.1) {
+    ros::param::get("coeNDTCov", coeNDTCov);
     ros::param::get("TransformationEpsilon", TransformationEpsilon);
     ros::param::get("StepSize", StepSize);
     ros::param::get("Resolution", Resolution);
@@ -68,14 +82,6 @@ public:
   }
 
 ///////
-
-  double getPnrate() {
-    return(pnrate);
-  }
-
-  size_t getUsedNum() {
-    return(usedNum);
-  }
 
   void setScanPair(const Scan2D *cur, const Scan2D *ref) {
     curScan = cur;
@@ -104,7 +110,7 @@ public:
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-  double estimatePose(Pose2D &initPose, Pose2D &estPose);
+  double estimatePose(Pose2D &initPose, Pose2D &estPose, Eigen::Matrix3d &cov);
 };
 
 #endif

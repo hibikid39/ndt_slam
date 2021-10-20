@@ -8,6 +8,7 @@
 
 #include <pcl/point_types.h>
 #include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/io/pcd_io.h>
 
 #include "MyUtil.h"
 #include "LPoint2D.h"
@@ -52,7 +53,7 @@ struct Submap {
 // 点群地図クラス
 class PointCloudMap{
 public:
-  static const int MAX_POINT_NUM=1000000;          // globalMapの最大点数
+  static const int MAX_POINT_NUM=10000000;          // globalMapの最大点数
   int nthre;                                       // 格子テーブルセル点数閾値
 
   std::vector<Pose2D> poses;            // ロボット軌跡
@@ -76,6 +77,9 @@ public:
 
   // ROS用
   sensor_msgs::PointCloud pcmap_ros;         // ROSメッセージ用点群地図
+
+  // ファイル出力用
+  pcl::PointCloud<pcl::PointXYZ> p_cloud;
 
   PointCloudMap() : nthre(1), sepThre(30), startFrame(0) {
     ros::param::get("start_frame", startFrame);
@@ -136,6 +140,23 @@ public:
 
   std::vector<Submap> &getSubmaps() {
     return(submaps);
+  }
+
+  void saveGlobalMap() {
+    p_cloud.width = globalMap.size();
+    p_cloud.height = 1;
+    p_cloud.is_dense = false;
+    p_cloud.points.resize(p_cloud.width * p_cloud.height);
+    for (size_t i=0; i<globalMap.size(); i++) {
+      p_cloud.points[i].x = globalMap[i].x;
+      p_cloud.points[i].y = globalMap[i].y;
+      p_cloud.points[i].z = 0;
+    }
+
+    // 作成したPointCloudをPCD形式で保存する
+	  ROS_INFO("[PointCloudMap::saveGlobalMap] savePCDFileASCII");
+  	pcl::io::savePCDFileASCII("p_cloud_ascii.pcd", p_cloud); // テキスト形式で保存する
+    ROS_INFO("[PointCloudMap::saveGlobalMap] finish.");
   }
 
 /////////////

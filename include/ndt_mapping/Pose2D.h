@@ -54,6 +54,10 @@ struct Pose2D {
     calRmat();
   }
 
+  double calDistance() const {
+    return std::sqrt(tx*tx+ty*ty);
+  }
+
 /////////////////
 
   static void calMotion(Pose2D curScan, Pose2D prevScan, Pose2D& Motion);

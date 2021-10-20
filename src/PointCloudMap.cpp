@@ -2,37 +2,6 @@
 using namespace std;
 
 ////// 部分地図 ///////
-
-// 格子テーブルを用いて、部分地図の代表点を得る
-/*
-vector<LPoint2D> Submap::subsamplePoints(int nthre, NNGridTable *nntab) {
-  double x_bottom = 10000000000;
-  double x_top = -10000000000;
-  double y_bottom = 10000000000;
-  double y_top = -10000000000;
-
-  for (size_t i=0; i<lps.size(); i++) {
-    LPoint2D &lp = lps[i];
-    if(false == (nntab->addPoint(&lp))) {     // NNGridTableに登録できたらfalse
-      if(x_bottom > lp.x) x_bottom = lp.x;
-      if(x_top < lp.x) x_top = lp.x;
-      if(y_bottom > lp.y) y_bottom = lp.y;
-      if(y_top < lp.y) y_top = lp.y;
-    }
-  }
-
-  ROS_INFO("%f, %f, %f, %f", x_bottom, x_top, y_bottom, y_top);
-
-  // nthre個以上のセルの代表点をspsに入れる
-  vector<LPoint2D> sps;
-  nntab->makeCellPoints(nthre, sps, x_bottom, x_top, y_bottom, y_top);
-  ROS_INFO("[Submap::subsamplePoints] lps.size=%lu, sps.size=%lu", lps.size(), sps.size());
-
-  nntab->clear(x_bottom, x_top, y_bottom, y_top);
-
-  return(sps);
-}
-*/
 vector<LPoint2D> Submap::filterPoints() {
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -70,7 +39,7 @@ void PointCloudMap::addPose(const Pose2D &p) {
     atd += sqrt((p.tx - pp.tx)*(p.tx - pp.tx) + (p.ty - pp.ty)*(p.ty - pp.ty));
   }
   else {
-    atd += sqrt(p.tx*p.tx + p.ty*p.ty);
+    atd = 0.0;
   }
 
   poses.emplace_back(p);

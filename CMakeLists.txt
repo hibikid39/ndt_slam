@@ -77,7 +77,7 @@ src/RefScanMaker.cpp
 src/ScanPointResampler.cpp
 #src/NNGridTable.cpp
 #src/ScanPointAnalyser.cpp
-#src/PoseFuser.cpp
+src/PoseFuser.cpp
 #src/CovarianceCalculator.cpp
 src/TFBroadcaster.cpp
 #src/LoopDetector.cpp

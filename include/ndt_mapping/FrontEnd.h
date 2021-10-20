@@ -21,7 +21,6 @@ private:
   int keyframeSkip;                  // キーフレーム間隔
   int startFrame;                    // 開始するフレーム番号
 
-//  ScanMatcher2D smat;                // スキャンマッチング
   ScanMatcher smat;                // スキャンマッチング
   PointCloudMap *pcmap;              // 点群地図
 //  PoseGraph *pg;                     // ポーズグラフ
@@ -40,14 +39,24 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+  // rvizにpublishするのに使う
   geometry_msgs::PoseArray get_poseArray() {
     return smat.get_poseArray();
   }
+
+  // ファイル書き出しに使う
   std::vector<Pose2D> get_poses() {
     return smat.poses;
   }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+  // 地図のファイル書き出し
+  void saveMap() {
+    pcmap->makeGlobalMap();
+    pcmap->saveGlobalMap();
+  }
+
 /*
   void setCostFunction(CostFunction *cfunc_) {
     lpd.setCostFunction(cfunc_);

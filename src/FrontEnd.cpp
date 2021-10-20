@@ -2,6 +2,7 @@
 
 // 現在スキャンscanを処理する。
 void FrontEnd::process(Scan2D &scan) {
+  ROS_INFO("[FrontEnd::process] scan.sid = %d", scan.sid);
   if (scan.sid < startFrame) {
     return;
   } else {

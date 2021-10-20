@@ -17,7 +17,7 @@
 #include "ScanPointResampler.h"
 //#include "ScanPointAnalyser.h"
 #include "PoseEstimator.h"
-//#include "PoseFuser.h"
+#include "PoseFuser.h"
 #include "TFBroadcaster.h"
 #include "Timer.h"
 
@@ -39,13 +39,12 @@ public:
   ScanPointResampler spres;               // スキャン点間隔均一化
 //  ScanPointAnalyser spana;                // スキャン点法線計算
   RefScanMaker refScanMaker;              // 参照スキャン生成
-//  PoseFuser *pfu;                          // センサ融合器
   TFBroadcaster tfb;                      // 座標変換TFのブロードキャスター
-//  Eigen::Matrix3d cov;                    // ロボット移動量の共分散行列
-//  Eigen::Matrix3d totalCov;               // ロボット位置の共分散行列
-  std::vector<Pose2D> poses;              // ロボットの軌跡
 
-  //std::vector<PoseCov> poseCovs;          // デバッグ用
+  PoseFuser pfu;                          // センサ融合器
+  std::vector<Pose2D> poses;              // 姿勢の履歴
+  std::vector<Eigen::Matrix3d> Covs;      // 姿勢の共分散の履歴
+  Eigen::Matrix3d lastCov;
 
   geometry_msgs::PoseArray poseArray;     // RvizのPoseArray用
 
@@ -80,9 +79,12 @@ public:
     return(cov);
   }
 */
-  void savePose(const std_msgs::Header &header, const Pose2D &pose) {
-    geometry_msgs::Pose po;
+  void savePose(const std_msgs::Header &header, const Pose2D &pose, const Eigen::Matrix3d &cov) {
+    poses.push_back(pose);
+    Covs.push_back(cov);
 
+    // ROS用 geometry_msgs::PoseArray
+    geometry_msgs::Pose po;
     po.position.x = pose.tx;
     po.position.y = pose.ty;
     po.position.z = 0.0;
@@ -91,8 +93,6 @@ public:
     poseArray.poses.push_back(po);
     poseArray.header = header;
     poseArray.header.frame_id = "map";
-
-    poses.push_back(pose);
   }
 
   void remakePoseArray(std::vector<Pose2D> &poses_) {

@@ -88,18 +88,21 @@ bool SlamLauncher::input_file_line() {
 }
 
 void SlamLauncher::loop_wait() {
-  static int cnt = 0;
+  static int cnt = 1;
 
   while(ros::ok()){
-    if(cnt > end_frame) {
-      //output_file_poses(frontEnd.get_poses());
-      return; // 終了時間
+    if(cnt > end_frame) { // 終了時間
+      output_file_poses(frontEnd.get_poses());
+      frontEnd.saveMap();
+      return;
     }
 
     ROS_INFO("--- [SlamLauncher::loop_wait] cnt=%d ---",cnt);
 
     if(input_file_line() == true) {
-      ROS_INFO("Finish");
+      ROS_INFO("[SlamLauncher::loop_wait] Data Finish.");
+      output_file_poses(frontEnd.get_poses());
+      frontEnd.saveMap();
       return;
     }
 

@@ -1,7 +1,7 @@
 #include "ndt_mapping/PoseEstimator.h"
 
 // 初期値initPoseを与えて、ICPによりロボット位置の推定値estPoseを求める
-double PoseEstimator::estimatePose(Pose2D &initPose, Pose2D &estPose) {
+double PoseEstimator::estimatePose(Pose2D &initPose, Pose2D &estPose, Eigen::Matrix3d &cov) {
   pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr target_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -34,8 +34,8 @@ double PoseEstimator::estimatePose(Pose2D &initPose, Pose2D &estPose) {
   approximate_voxel_filter.setInputCloud(source_cloud);
   approximate_voxel_filter.filter(*filtered_cloud);
 
-  ROS_INFO("[PoseEstimator::estimatePose] source_cloud point num %d", source_cloud->points.size());
-  ROS_INFO("[PoseEstimator::estimatePose] filtered_cloud point num %d", filtered_cloud->points.size());
+  ROS_INFO("[PoseEstimator::estimatePose] source_cloud point num = %d", source_cloud->points.size());
+  ROS_INFO("[PoseEstimator::estimatePose] filtered_cloud point num = %d", filtered_cloud->points.size());
 
   timer.start_timer();
   // Setting point cloud to be aligned.
@@ -69,52 +69,26 @@ double PoseEstimator::estimatePose(Pose2D &initPose, Pose2D &estPose) {
   if (ndt.hasConverged() == 0) { // 収束してなかったら失敗 スコアを大きな値に
     cost = 10000000;
   }
+
+  double prob_aft = ndt.getTransformationProbability();
+  ROS_INFO("[PoseEstimator::estimatePose] prob_aft = %f, cost=%f", prob_aft, cost);
+
+
+  // hessianを計算
+  Eigen::Matrix<double,6,6> hessian;
+  Eigen::Matrix<double,6,1> p;
+  p << T(0, 3), T(1, 3), 0.0, 0.0, 0.0, theta;
+  ndt.getHessian(hessian, *output_cloud, p);
+  Eigen::Matrix3d hessian3d;
+  hessian3d << hessian(0,0), hessian(0,1), hessian(0,5),
+               hessian(1,0), hessian(1,1), hessian(1,5),
+               hessian(5,0), hessian(5,1), hessian(5,5);
+  hessian3d *= -1;
+//  std::cout << "H = " << std::endl;
+//  std::cout << hessian3d << std::endl;
+  cov = hessian3d.inverse() * coeNDTCov;
+//  std::cout << "cov = " << std::endl;
+//  std::cout << cov << std::endl;
+
   return cost;
-
-/*
-  double min = HUGE_VAL;             // コスト最小値 初期値は大きく HUGE_VAL:巨大な値
-  popt.setLimit(0.2);                // limitは外れ値の閾値[m]
-
-  double cost = 0;                       // コスト
-  double costOld = min;                  // 1つ前の値。収束判定のために使う。
-  Pose2D pose = initPose;
-  Pose2D poseMin = initPose;             // poseMin:最適ポーズ
-
-  // コストの変化量が小さくなったら終了 i<100は振動対策
-  for (int i=0; std::abs(costOld-cost) > thre && i<100; i++){
-    if (i > 0)
-      costOld = cost;
-    // データ対応づけ 結果はDataAssociatorのcurLps,refLpsに格納
-    double ratio = dass->findCorrespondence(curScan, pose);    // ratio:対応付けできた割合
-    Pose2D newPose;
-    popt.setPoints(dass->curLps, dass->refLps);               // 対応結果をコスト関数に渡す
-    cost = popt.optimizePose(pose, newPose);                  // その対応づけにおいてロボット位置の最適化
-
-//    printf("pose : pose.tx=%g, pose.ty=%g, pose.th=%g\n", pose.tx, pose.ty, pose.th);
-//    printf("newPose : newPose.tx=%g, newPose.ty=%g, newPose.th=%g\n", newPose.tx, newPose.ty, newPose.th);
-    pose = newPose;
-
-    if (cost < min) {                                             // コスト最小結果を保存
-      poseMin = newPose;
-      min = cost;
-    }
-//    printf("[PoseEstimatorICP] dass->curLps.size=%lu, dass->refLps.size=%lu, ratio=%g\n", dass->curLps.size(), dass->refLps.size(), ratio);
-//    printf("[PoseEstimatorICP] i=%d: cost=%g, costOld=%g\n", i, cost, costOld);
-  }
-
-  pnrate = popt.getPnrate();
-  usedNum = dass->curLps.size();
-
-  estPose = poseMin;
-
-  ROS_INFO("[PoseEstimator::estimatePose] finalError=%g, pnrate=%g, usedNum=%d", min, pnrate, int(usedNum));
-//  printf("estPose:  tx=%f, ty=%f, th=%f\n", pose.tx, pose.ty, pose.th);      // 確認用
-
-  if (min < HUGE_VAL)
-    totalError += min;                      // 誤差合計
-//  printf("totalError=%f\n", totalError);    // 確認用
-
-  return(min);
-
-*/
 }
