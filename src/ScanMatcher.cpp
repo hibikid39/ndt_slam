@@ -114,7 +114,4 @@ void ScanMatcher::growMap(const Scan2D &scan, const Pose2D &pose) {
   pcmap->setLastPose(pose);
   pcmap->setLastScan(scan);          // 参照スキャン用に保存
   pcmap->makeLocalMap();             // 局所地図を生成
-
-//  printf("[ScanMatcher2D] estPose: tx=%f, ty=%f, th=%f\n", pose.tx, pose.ty, pose.th);    // 確認用
-
 }

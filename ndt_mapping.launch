@@ -8,7 +8,6 @@
   <param name="/end_frame" type="int" value="100000" />        <!-- 終了するフレーム番号 -->
   <param name="/keyframe_skip" type="int" value="5" />        <!-- 全体地図を作る周期 -->
   <param name="/score_thre" type="double" value="0.5" />      <!-- スコアの閾値 -->
-  <param name="/num_thre" type="int" value="150" />            <!-- 使用スキャン点数の閾値 -->
   <param name="/space" type="double" value="0.05" />          <!-- 5cm スキャン点間隔 -->
   <param name="/space_thre" type="double" value="0.25" />     <!-- 25cm スキャン点間隔の閾値 -->
   <param name="/sepThre" type="double" value="10.0" />     <!-- 10mごとにサブマップを作る -->

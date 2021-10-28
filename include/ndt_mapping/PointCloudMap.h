@@ -54,7 +54,6 @@ struct Submap {
 class PointCloudMap{
 public:
   static const int MAX_POINT_NUM=10000000;          // globalMapの最大点数
-  int nthre;                                       // 格子テーブルセル点数閾値
 
   std::vector<Pose2D> poses;            // ロボット軌跡
   Pose2D lastPose;                      // 最後に推定したロボット位置
@@ -63,8 +62,6 @@ public:
 
   std::vector<LPoint2D> globalMap;      // 全体地図 間引き後の点
   std::vector<LPoint2D> localMap;       // 現在位置近傍の局所地図 スキャンマッチングに使う
-
-//  NNGridTable *nntab;                    // 格子テーブル
 
   // 部分地図
   double sepThre;                // 部分地図の区切りとなる累積走行距離(atd)[m]
@@ -81,7 +78,7 @@ public:
   // ファイル出力用
   pcl::PointCloud<pcl::PointXYZ> p_cloud;
 
-  PointCloudMap() : nthre(1), sepThre(30), startFrame(0) {
+  PointCloudMap() : sepThre(30), startFrame(0) {
     ros::param::get("start_frame", startFrame);
     ros::param::get("sepThre", sepThre);
 
@@ -112,18 +109,6 @@ public:
   }
 
   ~PointCloudMap() {
-  }
-
-////////////////////////////////////////////////////////////////////////////////
-/*
-  void setNNGridTable(NNGridTable *nntab_) {
-    nntab = nntab_;
-  }
-*/
-////////////////////////////////////////////////////////////////////////////////
-
-  void setNthre(int _nthre){
-    nthre = _nthre;
   }
 
   void setLastPose(const Pose2D &p) {

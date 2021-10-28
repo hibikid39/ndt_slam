@@ -28,16 +28,12 @@ private:
   Scan2D prevScan;                        // 1つ前のスキャン
   Pose2D initPose;                        // 地図の原点の位置。通常(0,0,0)
 
-  double scthre;                          // スコア閾値。これより大きいとICP失敗とみなす
-  double nthre;                           // 使用点数閾値。これより小さいとICP失敗とみなす
-  double atd;                             // 累積走行距離。確認用
-  bool degCheck;                           // 退化処理をするか
+  double scthre;                          // スコア閾値
 
 public:
   PoseEstimator *estim;                 // ロボット位置推定器
   PointCloudMap *pcmap;                   // 点群地図
   ScanPointResampler spres;               // スキャン点間隔均一化
-//  ScanPointAnalyser spana;                // スキャン点法線計算
   RefScanMaker refScanMaker;              // 参照スキャン生成
   TFBroadcaster tfb;                      // 座標変換TFのブロードキャスター
 
@@ -51,10 +47,8 @@ public:
   Timer timer;
 
 public:
-  ScanMatcher() : cnt(0), scthre(0.0), nthre(0), degCheck(false){
+  ScanMatcher() : cnt(0), scthre(0.0){
     ros::param::get("score_thre", scthre);
-    ros::param::get("num_thre", nthre);
-    ros::param::get("degCheck", degCheck);
   }
 
   ~ScanMatcher(){
@@ -70,15 +64,7 @@ public:
     pcmap = pcmap_;
     refScanMaker.setPointCloudMap(pcmap_); // 参照スキャン生成器に地図を渡す
   }
-/*
-  void setPoseFuser(PoseFuser *pfu_) {
-    pfu = pfu_;
-  }
 
-  Eigen::Matrix3d &getCov() {
-    return(cov);
-  }
-*/
   void savePose(const std_msgs::Header &header, const Pose2D &pose, const Eigen::Matrix3d &cov) {
     poses.push_back(pose);
     Covs.push_back(cov);
