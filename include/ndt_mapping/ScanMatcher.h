@@ -34,7 +34,7 @@ public:
   PoseEstimator *estim;                 // ロボット位置推定器
   PointCloudMap *pcmap;                   // 点群地図
   ScanPointResampler spres;               // スキャン点間隔均一化
-  RefScanMaker refScanMaker;              // 参照スキャン生成
+//  RefScanMaker refScanMaker;              // 参照スキャン生成
   TFBroadcaster tfb;                      // 座標変換TFのブロードキャスター
 
   PoseFuser pfu;                          // センサ融合器
@@ -62,7 +62,7 @@ public:
 
   void setPointCloudMap(PointCloudMap *pcmap_) {
     pcmap = pcmap_;
-    refScanMaker.setPointCloudMap(pcmap_); // 参照スキャン生成器に地図を渡す
+//    refScanMaker.setPointCloudMap(pcmap_); // 参照スキャン生成器に地図を渡す
   }
 
   void savePose(const std_msgs::Header &header, const Pose2D &pose, const Eigen::Matrix3d &cov) {

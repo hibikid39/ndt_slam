@@ -14,7 +14,6 @@
 #include "LPoint2D.h"
 #include "Pose2D.h"
 #include "Scan2D.h"
-//#include "NNGridTable.h"
 #include "Timer.h"
 
 // 部分地図
@@ -23,8 +22,9 @@ struct Submap {
   size_t cntS;               // 部分地図の最初のスキャン番号
   size_t cntE;               // 部分地図の最後のスキャン番号
 
-  std::vector<LPoint2D> lps; // 部分地図内のスキャン点群
-  Pose2D repPose; // 自己位置の代表点
+  //std::vector<LPoint2D> lps; // 部分地図内のスキャン点群
+  //Pose2D repPose; // 自己位置の代表点
+  pcl::PointCloud<pcl::PointXYZ>::Ptr p_cloud;
 
   double LeafSize; // フィルタサイズ
 
@@ -33,35 +33,53 @@ struct Submap {
 
   Submap() : atdS(0), cntS(0), cntE(-1), LeafSize(0.2) {
     ros::param::get("LeafSize", LeafSize);
+
+    p_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
   }
 
   Submap(double a, size_t s) : cntE(-1), LeafSize(0.2) {
     atdS = a;
     cntS = s;
     ros::param::get("LeafSize", LeafSize);
+
+    p_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
   }
 
-  void addPoints(const std::vector<LPoint2D> &lps_) {
-    for (size_t i=0; i<lps_.size(); i++)
-      lps.emplace_back(lps_[i]);
+  void addPoints(const std::vector<LPoint2D> &lps) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+    cloud_ptr->width = lps.size();
+    cloud_ptr->height = 1;
+    cloud_ptr->is_dense = false;
+    cloud_ptr->points.resize(cloud_ptr->width * cloud_ptr->height);
+    for (size_t i = 0; i < cloud_ptr->points.size(); i++) {
+      cloud_ptr->points[i].x = lps[i].x;
+      cloud_ptr->points[i].y = lps[i].y;
+      cloud_ptr->points[i].z = 0;
+    }
+    
+    *p_cloud += *cloud_ptr;
+    
   }
 
 //  std::vector<LPoint2D> subsamplePoints(int nthre, NNGridTable *nntab);
-  std::vector<LPoint2D> filterPoints();
+  pcl::PointCloud<pcl::PointXYZ>::Ptr filterPoints();
 };
 
 // 点群地図クラス
 class PointCloudMap{
 public:
-  static const int MAX_POINT_NUM=10000000;          // globalMapの最大点数
+//  static const int MAX_POINT_NUM=10000000;          // globalMapの最大点数
 
   std::vector<Pose2D> poses;            // ロボット軌跡
   Pose2D lastPose;                      // 最後に推定したロボット位置
   Scan2D lastScan;                      // 最後に処理したスキャン
   int startFrame;                       // 開始したフレーム番号
 
-  std::vector<LPoint2D> globalMap;      // 全体地図 間引き後の点
-  std::vector<LPoint2D> localMap;       // 現在位置近傍の局所地図 スキャンマッチングに使う
+  pcl::PointCloud<pcl::PointXYZ>::Ptr globalMap_cloud;  // 全体地図 間引き後の点
+  pcl::PointCloud<pcl::PointXYZ>::Ptr localMap_cloud;   // 現在位置近傍の局所地図
+
+  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> scans; // スキャンデータ履歴
 
   // 部分地図
   double sepThre;                // 部分地図の区切りとなる累積走行距離(atd)[m]
@@ -82,30 +100,12 @@ public:
     ros::param::get("start_frame", startFrame);
     ros::param::get("sepThre", sepThre);
 
-    globalMap.reserve(MAX_POINT_NUM);       // 最初に確保
+    globalMap_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    localMap_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
     // 最初の部分地図を作っておく
     Submap submap;
     submaps.emplace_back(submap);
-
-    // rviz用 点群地図の色を設定
-    pcmap_ros.points.reserve(MAX_POINT_NUM);
-    sensor_msgs::ChannelFloat32 channel;
-    channel.name = "rgb";
-    pcmap_ros.channels.emplace_back(channel);
-    pcmap_ros.channels[0].values.reserve(MAX_POINT_NUM);
-    std::vector<uint32_t> color{255, 0, 0};
-    colorList.push_back(color);
-    color[0] = 0; color[1] = 255; color[2] = 0;
-    colorList.push_back(color);
-    color[0] = 0; color[1] = 0; color[2] = 255;
-    colorList.push_back(color);
-    color[0] = 255; color[1] = 255; color[2] = 0;
-    colorList.push_back(color);
-    color[0] = 0; color[1] = 255; color[2] = 255;
-    colorList.push_back(color);
-    color[0] = 255; color[1] = 0; color[2] = 255;
-    colorList.push_back(color);
   }
 
   ~PointCloudMap() {
@@ -128,19 +128,9 @@ public:
   }
 
   void saveGlobalMap() {
-    p_cloud.width = globalMap.size();
-    p_cloud.height = 1;
-    p_cloud.is_dense = false;
-    p_cloud.points.resize(p_cloud.width * p_cloud.height);
-    for (size_t i=0; i<globalMap.size(); i++) {
-      p_cloud.points[i].x = globalMap[i].x;
-      p_cloud.points[i].y = globalMap[i].y;
-      p_cloud.points[i].z = 0;
-    }
-
     // 作成したPointCloudをPCD形式で保存する
 	  ROS_INFO("[PointCloudMap::saveGlobalMap] savePCDFileASCII");
-  	pcl::io::savePCDFileASCII("p_cloud_ascii.pcd", p_cloud); // テキスト形式で保存する
+  	pcl::io::savePCDFileASCII("p_cloud_ascii.pcd", *globalMap_cloud); // テキスト形式で保存する
     ROS_INFO("[PointCloudMap::saveGlobalMap] finish.");
   }
 
@@ -150,8 +140,7 @@ public:
   void addPoints(const std::vector<LPoint2D> &lps);
   void makeGlobalMap();
   void makeLocalMap();
-//  void samplePoints();
-  void remakeMaps(const std::vector<Pose2D> &newPoses);
+//  void remakeMaps(const std::vector<Pose2D> &newPoses);
 };
 
 #endif

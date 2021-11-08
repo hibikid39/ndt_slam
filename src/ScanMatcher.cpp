@@ -34,10 +34,10 @@ bool ScanMatcher::matchScan(Scan2D &curScan) {
   ROS_INFO("[ScanMatcher::matchScan] predPose.tx=%f, predPose.ty=%f, predPose.th=%f", predPose.tx, predPose.ty, predPose.th);
 
   // 参照スキャン生成
-  const Scan2D *refScan = refScanMaker.makeRefScan();            // 参照スキャンの生成
+//  const Scan2D *refScan = refScanMaker.makeRefScan();            // 参照スキャンの生成
   // 現在スキャンと参照スキャンを設定
-  estim->setScanPair(&curScan, refScan);
-//  printf("[ScanMatcher2D] curScan.size=%lu, refScan.size=%lu\n", curScan.lps.size(), refScan->lps.size());
+//  estim->setScanPair(&curScan, refScan);
+  estim->setScanPair(&curScan, pcmap->localMap_cloud);
 
   // NDT
   Pose2D estPose;                                                // 推定位置

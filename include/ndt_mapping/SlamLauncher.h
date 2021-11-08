@@ -16,6 +16,10 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/PointCloud.h>
 
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 #include "MyUtil.h"
 #include "FrontEnd.h"
 #include "PointCloudMap.h"
@@ -78,7 +82,8 @@ public:
     sub_scan = nh.subscribe("scan", 1, &SlamLauncher::callback_scan, this);
 */
 //    pub_ocg = nh.advertise<nav_msgs::OccupancyGrid>("map", 1);
-    pub_pc = nh.advertise<sensor_msgs::PointCloud>("pcmap_ros", 1);
+//    pub_pc = nh.advertise<sensor_msgs::PointCloud>("pcmap", 1);
+    pub_pc = nh.advertise<pcl::PointCloud<pcl::PointXYZ>> ("pcmap", 1);
     pub_poseArray = nh.advertise<geometry_msgs::PoseArray>("poses", 1);
 //    pub_marker = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 

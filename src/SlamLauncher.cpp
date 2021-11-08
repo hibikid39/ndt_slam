@@ -109,10 +109,15 @@ void SlamLauncher::loop_wait() {
     frontEnd.process(scan); // 処理本体
 
     if(cnt%drawSkip == 0){                           // drawSkipおきに描画
+      pcmap.globalMap_cloud->header.frame_id = "map";
+      pcl_conversions::toPCL(ros::Time::now(), pcmap.globalMap_cloud->header.stamp);
+      pub_pc.publish(pcmap.globalMap_cloud);
+/*
       pcmap.pcmap_ros.header.seq = stamp;
       pcmap.pcmap_ros.header.stamp = ros::Time::now();;
       pcmap.pcmap_ros.header.frame_id = "map";   // フレームIDをworld座標系(map)に変更
       pub_pc.publish(pcmap.pcmap_ros);  // 地図描画
+*/
     }
     pub_poseArray.publish(frontEnd.get_poseArray()); // 姿勢描画
 

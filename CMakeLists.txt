@@ -72,7 +72,7 @@ src/Pose2D.cpp
 src/PointCloudMap.cpp
 src/PoseEstimator.cpp
 src/ScanMatcher.cpp
-src/RefScanMaker.cpp
+#src/RefScanMaker.cpp
 #src/DataAssociator.cpp
 #src/CostFunction.cpp
 #src/PoseOptimizer.cpp

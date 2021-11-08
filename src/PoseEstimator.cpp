@@ -2,31 +2,6 @@
 
 // 初期値initPoseを与えて、ICPによりロボット位置の推定値estPoseを求める
 double PoseEstimator::estimatePose(Pose2D &initPose, Pose2D &estPose, Eigen::Matrix3d &cov) {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr target_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-
-  // source_cloud data
-  source_cloud->width = curScan->lps.size();
-  source_cloud->height = 1;
-  source_cloud->is_dense = false;
-  source_cloud->points.resize(source_cloud->width * source_cloud->height);
-  for (size_t i = 0; i < source_cloud->points.size(); ++i) {
-    source_cloud->points[i].x = curScan->lps[i].x;
-    source_cloud->points[i].y = curScan->lps[i].y;
-    source_cloud->points[i].z = 0;
-  }
-
-  // target_cloud data
-  target_cloud->width = refScan->lps.size();
-  target_cloud->height = 1;
-  target_cloud->is_dense = false;
-  target_cloud->points.resize(target_cloud->width * target_cloud->height);
-  for (size_t i = 0; i < target_cloud->points.size(); ++i) {
-    target_cloud->points[i].x = refScan->lps[i].x;
-    target_cloud->points[i].y = refScan->lps[i].y;
-    target_cloud->points[i].z = 0;
-  }
-
   // filter source_cloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::ApproximateVoxelGrid<pcl::PointXYZ> approximate_voxel_filter;
