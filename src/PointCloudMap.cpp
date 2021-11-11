@@ -29,17 +29,45 @@ void PointCloudMap::addPose(const Pose2D &p) {
 
 // スキャン点群の追加
 void PointCloudMap::addPoints(const std::vector<LPoint2D> &lps) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+  cloud_ptr->width = lps.size();
+  cloud_ptr->height = 1;
+  cloud_ptr->is_dense = false;
+  cloud_ptr->points.resize(cloud_ptr->width * cloud_ptr->height);
+  for (size_t i = 0; i < cloud_ptr->points.size(); i++) {
+    cloud_ptr->points[i].x = lps[i].x;
+    cloud_ptr->points[i].y = lps[i].y;
+    cloud_ptr->points[i].z = 0;
+  }
+
   Submap &curSubmap = submaps.back();              // 現在の部分地図
+
+  if (removeDyna == true) {
+    auto pose = poses.end();
+    double min_x = pose->tx - 10;
+    double max_x = pose->tx + 10;
+    double min_y = pose->ty - 10;
+    double max_y = pose->ty + 10;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr passed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    passed_cloud = pcf.pass_through("x", min_x, max_x, cloud_ptr);
+    passed_cloud = pcf.pass_through("x", min_y, max_y, passed_cloud);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_diff(new pcl::PointCloud<pcl::PointXYZ>);
+    cloud_diff = pcf.difference_extraction(curSubmap.p_cloud, passed_cloud);
+
+    cloud_ptr = pcf.remove_neighborPoint(cloud_ptr, cloud_diff);
+  }
+
   if (atd - curSubmap.atdS >= sepThre ) {          // 累積走行距離が閾値を超えたら新しい部分地図に変える
     size_t size = poses.size();                    // posesにはすでに最新値を追加済みなので-1
     curSubmap.cntE = size-1;                       // 部分地図の最後のスキャン番号
     curSubmap.p_cloud = curSubmap.filterPoints();      // フィルター
 
     Submap submap(atd, size);                      // 新しい部分地図
-    submap.addPoints(lps);                         // スキャン点群の登録
+    submap.addPoints(cloud_ptr);                         // スキャン点群の登録
     submaps.emplace_back(submap);                  // 部分地図を追加
   } else {                                         // 超えていなければ
-    curSubmap.addPoints(lps);                      // 現在の部分地図に点群を追加
+    curSubmap.addPoints(cloud_ptr);                      // 現在の部分地図に点群を追加
   }
 }
 

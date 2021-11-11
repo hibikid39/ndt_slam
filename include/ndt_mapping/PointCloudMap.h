@@ -12,6 +12,7 @@
 
 #include "MyUtil.h"
 #include "LPoint2D.h"
+#include "PCFilter.h"
 #include "Pose2D.h"
 #include "Scan2D.h"
 #include "Timer.h"
@@ -45,30 +46,17 @@ struct Submap {
     p_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
   }
 
-  void addPoints(const std::vector<LPoint2D> &lps) {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-
-    cloud_ptr->width = lps.size();
-    cloud_ptr->height = 1;
-    cloud_ptr->is_dense = false;
-    cloud_ptr->points.resize(cloud_ptr->width * cloud_ptr->height);
-    for (size_t i = 0; i < cloud_ptr->points.size(); i++) {
-      cloud_ptr->points[i].x = lps[i].x;
-      cloud_ptr->points[i].y = lps[i].y;
-      cloud_ptr->points[i].z = 0;
-    }
-    
+  void addPoints(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr) {
     *p_cloud += *cloud_ptr;
-    
   }
 
-//  std::vector<LPoint2D> subsamplePoints(int nthre, NNGridTable *nntab);
   pcl::PointCloud<pcl::PointXYZ>::Ptr filterPoints();
 };
 
 // 点群地図クラス
 class PointCloudMap{
 public:
+  PCFilter pcf;
 //  static const int MAX_POINT_NUM=10000000;          // globalMapの最大点数
 
   std::vector<Pose2D> poses;            // ロボット軌跡
@@ -76,9 +64,10 @@ public:
   Scan2D lastScan;                      // 最後に処理したスキャン
   int startFrame;                       // 開始したフレーム番号
 
+  bool removeDyna;
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr globalMap_cloud;  // 全体地図 間引き後の点
   pcl::PointCloud<pcl::PointXYZ>::Ptr localMap_cloud;   // 現在位置近傍の局所地図
-
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> scans; // スキャンデータ履歴
 
   // 部分地図
@@ -88,17 +77,14 @@ public:
 
   // デバッグ用
   Timer timer;
-  std::vector<std::vector<uint32_t>> colorList; // 点群地図の色
-
-  // ROS用
-  sensor_msgs::PointCloud pcmap_ros;         // ROSメッセージ用点群地図
 
   // ファイル出力用
   pcl::PointCloud<pcl::PointXYZ> p_cloud;
 
-  PointCloudMap() : sepThre(30), startFrame(0) {
+  PointCloudMap() : sepThre(30), startFrame(0), removeDyna(false) {
     ros::param::get("start_frame", startFrame);
     ros::param::get("sepThre", sepThre);
+    ros::param::get("removeDyna", removeDyna);
 
     globalMap_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     localMap_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
