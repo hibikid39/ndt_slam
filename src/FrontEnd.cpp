@@ -1,4 +1,4 @@
-#include "ndt_mapping/FrontEnd.h"
+#include "ndt_slam/FrontEnd.h"
 
 // 現在スキャンscanを処理する。
 void FrontEnd::process(Scan2D &scan) {

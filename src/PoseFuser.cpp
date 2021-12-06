@@ -1,4 +1,4 @@
-#include "ndt_mapping/PoseFuser.h"
+#include "ndt_slam/PoseFuser.h"
 
 void PoseFuser::fusePose(const Pose2D &predPose, const Pose2D &estPose,
                          const Pose2D &odoMotion, const Pose2D &lastPose,

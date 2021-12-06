@@ -1,4 +1,4 @@
-#include "ndt_mapping/Pose2D.h"
+#include "ndt_slam/Pose2D.h"
 
 // prevPoseからcurPoseまでの相対位置(移動距離)を求める -> Motion
 // Motionはロボット座標系での移動量 dx,dyはワールド座標系

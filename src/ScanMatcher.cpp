@@ -1,4 +1,4 @@
-#include "ndt_mapping/ScanMatcher.h"
+#include "ndt_slam/ScanMatcher.h"
 
 // スキャンマッチングの実行
 bool ScanMatcher::matchScan(Scan2D &curScan) {

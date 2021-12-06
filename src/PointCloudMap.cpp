@@ -1,4 +1,4 @@
-#include "ndt_mapping/PointCloudMap.h"
+#include "ndt_slam/PointCloudMap.h"
 using namespace std;
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr Submap::filterPoints() {
@@ -11,6 +11,33 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr Submap::filterPoints() {
 
   return filtered_cloud;
 }
+
+void Submap::makeMap() {
+  p_cloud->clear();
+
+  if (removeMoving == true) {
+    if (cntS == 0) *p_cloud += *(scans[0]);
+    int scan_num = static_cast<int>(scans.size());
+    for (int i = 0; i < scan_num-2; i++) {
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_1and3(new pcl::PointCloud<pcl::PointXYZ>);
+      *cloud_1and3 += *(scans[i]);
+      *cloud_1and3 += *(scans[i+2]);
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_diff(new pcl::PointCloud<pcl::PointXYZ>);
+      cloud_diff = pcf.difference_extraction(cloud_1and3, scans[i+1]);
+      *p_cloud += *(pcf.remove_neighborPoint(scans[i+1], cloud_diff));
+    }
+    if (newest == true) {
+      *p_cloud += *(scans[scans.size()-1]);
+    }
+  } else {
+    if (cntS == 0) {  // 最初の部分地図なら
+      for (size_t i = 0; i < scans.size(); i++) *p_cloud += *(scans[i]);
+    } else {
+      for (size_t i = 2; i < scans.size(); i++) *p_cloud += *(scans[i]);
+    }
+  }
+}
+
 ///////////////////////
 
 // ロボット位置の追加
@@ -42,32 +69,24 @@ void PointCloudMap::addPoints(const std::vector<LPoint2D> &lps) {
 
   Submap &curSubmap = submaps.back();              // 現在の部分地図
 
-  if (removeDyna == true) {
-    auto pose = poses.end();
-    double min_x = pose->tx - 10;
-    double max_x = pose->tx + 10;
-    double min_y = pose->ty - 10;
-    double max_y = pose->ty + 10;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr passed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    passed_cloud = pcf.pass_through("x", min_x, max_x, cloud_ptr);
-    passed_cloud = pcf.pass_through("x", min_y, max_y, passed_cloud);
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_diff(new pcl::PointCloud<pcl::PointXYZ>);
-    cloud_diff = pcf.difference_extraction(curSubmap.p_cloud, passed_cloud);
-
-    cloud_ptr = pcf.remove_neighborPoint(cloud_ptr, cloud_diff);
-  }
-
   if (atd - curSubmap.atdS >= sepThre ) {          // 累積走行距離が閾値を超えたら新しい部分地図に変える
-    size_t size = poses.size();                    // posesにはすでに最新値を追加済みなので-1
-    curSubmap.cntE = size-1;                       // 部分地図の最後のスキャン番号
-    curSubmap.p_cloud = curSubmap.filterPoints();      // フィルター
+    size_t size = poses.size();                    // posesにはすでに最新値を追加済みなので-2
+    curSubmap.cntE = size-2;                       // 部分地図の最後のスキャン番号
+    curSubmap.p_cloud = curSubmap.filterPoints();  // フィルター
+    curSubmap.newest = false;
 
-    Submap submap(atd, size);                      // 新しい部分地図
-    submap.addPoints(cloud_ptr);                         // スキャン点群の登録
+    Submap submap(atd, size-1);                      // 新しい部分地図
+    size_t scan_num = curSubmap.scans.size();
+    if (scan_num >= 2) {                              // 動的物体除去のために, 前の部分地図の最新2データを新しい部分地図に追加
+      submap.addPoints(curSubmap.scans[scan_num-2]);
+      submap.addPoints(curSubmap.scans[scan_num-1]);
+    }
+    submap.addPoints(cloud_ptr);                   // スキャン点群の登録
+    submap.makeMap();                              // 地図再構築 + 動的物体除去
     submaps.emplace_back(submap);                  // 部分地図を追加
   } else {                                         // 超えていなければ
-    curSubmap.addPoints(cloud_ptr);                      // 現在の部分地図に点群を追加
+    curSubmap.addPoints(cloud_ptr);                // 現在の部分地図に点群を追加
+    curSubmap.makeMap();                           // 地図再構築 + 動的物体除去
   }
 }
 
@@ -75,27 +94,25 @@ void PointCloudMap::addPoints(const std::vector<LPoint2D> &lps) {
 
 // 全体地図生成 局所地図もここで生成
 void PointCloudMap::makeGlobalMap(){
-//  timer.start_timer();
-
   globalMap_cloud->clear();                               // 初期化
+  maps.clear();
 
-  // 現在以外のすでに確定した部分地図から点を集める
+  // 現在以外のすでに確定した部分地図を全体地図に入れる
   for (size_t i=0; i<submaps.size()-1; i++) {
     Submap &submap = submaps[i];                   // 部分地図
     *globalMap_cloud += *(submap.p_cloud);
+    
+    maps.emplace_back(submap.p_cloud);  // 部分地図ごとに保存
   }
 
-  // 現在の部分地図の代表点を全体地図に入れる
+  // 現在の部分地図を全体地図に入れる
   Submap &curSubmap = submaps.back();              // 現在の部分地図
   pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud = curSubmap.filterPoints(); // フィルター
   *globalMap_cloud += *filtered_cloud;
+  maps.emplace_back(filtered_cloud);  // 部分地図ごとに保存
 
-  // 以下は確認用
   ROS_INFO("[PointCloudMap::makeGlobalMap] curSubmap.atdS=%g, atd=%g", curSubmap.atdS, atd);
   ROS_INFO("[PointCloudMap::makeGlobalMap] submaps.size=%lu, lobalMap_cloud->points.size=%lu", submaps.size(), globalMap_cloud->points.size());
-
-//  timer.end_timer();
-//  timer.print_timer();
 }
 
 // 局所地図生成

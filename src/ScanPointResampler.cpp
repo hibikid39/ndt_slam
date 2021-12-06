@@ -1,4 +1,4 @@
-#include "ndt_mapping/ScanPointResampler.h"
+#include "ndt_slam/ScanPointResampler.h"
 
 // scanを均一化
 void ScanPointResampler::resamplePoints(Scan2D *scan) {

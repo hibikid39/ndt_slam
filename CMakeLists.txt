@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(ndt_mapping)
+project(ndt_slam)
 
 #add_compile_options(-std=c++11)
 set(CMAKE_CXX_STANDARD 14)
@@ -31,7 +31,7 @@ find_package(PCL 1.2 REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ndt_mapping
+  LIBRARIES ndt_slam
   CATKIN_DEPENDS roscpp rospy std_msgs
   DEPENDS system_lib
 )
@@ -62,12 +62,11 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(ndt_mapping
+add_executable(ndt_slam
 src/main.cpp
 src/MyUtil.cpp
 src/SlamLauncher.cpp
 src/FrontEnd.cpp
-src/Scan2D.cpp
 src/Pose2D.cpp
 src/PointCloudMap.cpp
 src/PoseEstimator.cpp
@@ -99,10 +98,10 @@ src/TFBroadcaster.cpp
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ndt_mapping
+target_link_libraries(ndt_slam
   ${catkin_LIBRARIES}
 )
-target_link_libraries(ndt_mapping
+target_link_libraries(ndt_slam
   ${PCL_LIBRARIES}
 )
 

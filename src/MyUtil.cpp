@@ -1,4 +1,4 @@
-#include "ndt_mapping/MyUtil.h"
+#include "ndt_slam/MyUtil.h"
 
 // 角度の加算 -180から180に正規化
 double MyUtil::add_angle(double a1, double a2) {

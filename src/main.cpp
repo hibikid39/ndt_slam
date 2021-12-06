@@ -1,9 +1,9 @@
 #include <ros/ros.h>
 
-#include "ndt_mapping/SlamLauncher.h"
+#include "ndt_slam/SlamLauncher.h"
 
 int main(int argc, char **argv){
-  ros::init(argc, argv, "ndt_mapping");
+  ros::init(argc, argv, "ndt_slam");
 
   SlamLauncher sl;
   sl.init();

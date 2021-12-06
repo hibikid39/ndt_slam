@@ -13,9 +13,6 @@
 
 // スキャン
 struct Scan2D {
-  static double MAX_SCAN_RANGE;              // スキャン点の距離値上限[m]
-  static double MIN_SCAN_RANGE;              // スキャン点の距離値下限[m]
-
   int sid;                                   // スキャンid
   Pose2D pose;                               // スキャン取得時のオドメトリ値
   std::vector<LPoint2D> lps;                 // スキャン点群

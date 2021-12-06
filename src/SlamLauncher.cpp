@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <vector>
 
-#include "ndt_mapping/SlamLauncher.h"
+#include "ndt_slam/SlamLauncher.h"
 
 void SlamLauncher::init() {
 //  frontEnd.setDataAssociator(&dass);
@@ -28,45 +28,20 @@ void SlamLauncher::init() {
 }
 
 void SlamLauncher::output_file_poses(std::vector<Pose2D> poses) {
-  int stamp = 1;
   outputfile << poses.size() << std::endl;
-  for (int i=0; i<poses.size(); i++){
-    outputfile << "POSE " << stamp << " " << poses[i].tx << " " << poses[i].ty << " " << poses[i].th << std::endl;
-    stamp++;
+  for (int i=0; i<poses.size(); i+=10){
+    outputfile << poses[i].tx << " " << poses[i].ty << " " << poses[i].th << " " << std::endl;
   }
 }
 
 bool SlamLauncher::input_file_line() {
   std::string buf;
-  std::string buf_angle;
-  std::string buf_range;
-  int data_num;
   std::vector<LPoint2D> lps;
   LPoint2D lp;
 
-  if(stamp == 0) std::getline(inputfile, buf, ' '); // LaserScan 最初だけLASERSCANを空読み
   std::getline(inputfile, buf, ' '); // time stamp
   stamp = std::stoi(buf);
   scan.sid = stamp;
-  std::getline(inputfile, buf, ' '); // data_num
-  data_num = std::stoi(buf);
-
-  lps.reserve(data_num);
-  lp.sid = stamp;
-
-  for (int i = 0; i < data_num; i++) {
-    std::getline(inputfile, buf_angle, ' ');
-    std::getline(inputfile, buf_range, ' ');
-
-    lp.set_RangeAngle2XY(std::stod(buf_range), std::stod(buf_angle));
-    lps.push_back(lp);
-
-    if(inputfile.eof()) {
-      ROS_INFO("[ERROR] data_num is fault");
-      exit(1);
-    }
-  }
-  scan.lps = lps;
 
   std::getline(inputfile, buf, ' '); // x
   scan.pose.tx = std::stod(buf);
@@ -74,6 +49,48 @@ bool SlamLauncher::input_file_line() {
   scan.pose.ty = std::stod(buf);
   std::getline(inputfile, buf, ' '); // theta[deg]
   scan.pose.th = std::stod(buf);
+
+  std::getline(inputfile, buf); // image_name
+  std::string image_name = buf;
+
+  std::getline(inputfile, buf, ' '); // data_num(front)
+  int data_num_front = std::stoi(buf);
+  for (int i = 0; i < data_num_front; i++) {
+    std::string buf_x, buf_y;
+    std::getline(inputfile, buf_x, ' ');
+    std::getline(inputfile, buf_y, ' ');
+    double x = std::stod(buf_x);
+    double y = std::stod(buf_y);
+    lp.setData(stamp, x, y);
+    lps.push_back(lp);
+  }
+  
+  std::getline(inputfile, buf, ' '); // data_num(left)
+  int data_num_left = std::stoi(buf);
+  for (int i = 0; i < data_num_left; i++) {
+    std::string buf_x, buf_y;
+    std::getline(inputfile, buf_x, ' ');
+    std::getline(inputfile, buf_y, ' ');
+    double x = std::stod(buf_x);
+    double y = std::stod(buf_y);
+    lp.setData(stamp, x, y);
+    if(sidelidar == true) lps.push_back(lp);
+  }
+
+  std::getline(inputfile, buf, ' '); // data_num(right)
+  int data_num_right = std::stoi(buf);
+  for (int i = 0; i < data_num_right; i++) {
+    std::string buf_x, buf_y;
+    std::getline(inputfile, buf_x, ' ');
+    std::getline(inputfile, buf_y, ' ');
+    double x = std::stod(buf_x);
+    double y = std::stod(buf_y);
+    lp.setData(stamp, x, y);
+    if(sidelidar == true) lps.push_back(lp);
+  }
+
+  scan.lps = lps;
+
   scan.pose.calRmat();
 
   if(inputfile.eof()){  // 全て読み込んだら終了
@@ -82,13 +99,15 @@ bool SlamLauncher::input_file_line() {
   }
 
   ROS_INFO("[SlamLauncher::input_file_line] scan.pose=(%g, %g, %g)", scan.pose.tx, scan.pose.tx, scan.pose.th);
-  ROS_INFO("[SlamLauncher::input_file_line] time_stamp=%d, data_num=%d", stamp, data_num);
+  ROS_INFO("[SlamLauncher::input_file_line] time_stamp=%d, data_num=%d", stamp, lps.size());
 
   return false;
 }
 
 void SlamLauncher::loop_wait() {
   static int cnt = 1;
+
+  readFormat();
 
   while(ros::ok()){
     if(cnt > end_frame) { // 終了時間
@@ -112,12 +131,6 @@ void SlamLauncher::loop_wait() {
       pcmap.globalMap_cloud->header.frame_id = "map";
       pcl_conversions::toPCL(ros::Time::now(), pcmap.globalMap_cloud->header.stamp);
       pub_pc.publish(pcmap.globalMap_cloud);
-/*
-      pcmap.pcmap_ros.header.seq = stamp;
-      pcmap.pcmap_ros.header.stamp = ros::Time::now();;
-      pcmap.pcmap_ros.header.frame_id = "map";   // フレームIDをworld座標系(map)に変更
-      pub_pc.publish(pcmap.pcmap_ros);  // 地図描画
-*/
     }
     pub_poseArray.publish(frontEnd.get_poseArray()); // 姿勢描画
 

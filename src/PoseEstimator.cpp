@@ -1,4 +1,4 @@
-#include "ndt_mapping/PoseEstimator.h"
+#include "ndt_slam/PoseEstimator.h"
 
 // 初期値initPoseを与えて、ICPによりロボット位置の推定値estPoseを求める
 double PoseEstimator::estimatePose(Pose2D &initPose, Pose2D &estPose, Eigen::Matrix3d &cov) {

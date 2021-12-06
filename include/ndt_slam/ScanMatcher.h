@@ -13,7 +13,6 @@
 #include "Pose2D.h"
 #include "Scan2D.h"
 #include "PointCloudMap.h"
-#include "RefScanMaker.h"
 #include "ScanPointResampler.h"
 //#include "ScanPointAnalyser.h"
 #include "PoseEstimator.h"
